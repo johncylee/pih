@@ -3,6 +3,7 @@ import Data.Char
 lowers :: String -> Int
 lowers cs = sum [1 | c <- cs, c >= 'a' && c <= 'z']
 
+-- ex.10
 let2int :: Char -> Char -> Int
 let2int a c = ord c - ord a
 
