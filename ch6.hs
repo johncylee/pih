@@ -6,18 +6,18 @@ fac n | n > 0 = product [1..n]
 -- 2
 sumdown :: Int -> Int
 sumdown 0 = 0
-sumdown n | n > 0 = n + sumdown (n-1)
+sumdown n = n + sumdown (n-1)
 
 -- 3
 (^) :: Int -> Int -> Int
 _ ^ 0 = 1
-a ^ b | b > 0 = a * (a Main.^ (b-1))
+l ^ r = l * (l Main.^ (r-1))
 
 -- 4
 euclid :: Int -> Int -> Int
-euclid a b | a == b = a
-           | a > b = euclid (a-b) b
-           | otherwise = euclid a (b-a)
+euclid x y | x == y = x
+           | x > y = euclid (x-y) y
+           | otherwise = euclid x (y-x)
 
 -- 6
 and :: [Bool] -> Bool

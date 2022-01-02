@@ -123,13 +123,13 @@ balanced (NodeB l r) = abs (leaves l - leaves r) <= 1
 
 -- 4
 
-split :: [a] -> ([a], [a])
-split xs = splitAt (length xs `div` 2) xs
+halve :: [a] -> ([a], [a])
+halve xs = splitAt (length xs `div` 2) xs
 
 balance :: [a] -> TreeB a
 balance [x] = LeafB x
 balance xs = NodeB (balance l) (balance r)
-  where (l, r) = split xs
+  where (l, r) = halve xs
 
 -- 5
 

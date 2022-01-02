@@ -109,17 +109,17 @@ solutions' ns n =
   [e | ns' <- choices ns, (e,m) <- results ns', m == n]
 
 -- ex.2
+removeone :: Eq a => a -> [a] -> [a]
+removeone x [] = []
+removeone x (y:ys) | x == y = ys
+                   | otherwise = y:removeone x ys
+
 isChoice :: Eq a => [a] -> [a] -> Bool
-isChoice [] ys = True
-isChoice xs [] = False
-isChoice xs (y:ys) = isChoice (strip1st xs y) ys
+isChoice [] _ = True
+isChoice (x:xs) [] = False
+isChoice (x:xs) ys = elem x ys && isChoice xs (removeone x ys)
 
-strip1st :: Eq a => [a] -> a -> [a]
-strip1st [] y = []
-strip1st (x:xs) y | x == y = xs
-                  | otherwise = x:strip1st xs y
-
--- ex.3: will waste time (?)
+-- ex.3: non-termination
 
 -- ex.4
 -- length [e | ns' <- choices [1,3,7,10,25,50], e <- exprs ns']

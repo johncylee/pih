@@ -20,7 +20,7 @@ safetail xs | null xs = []
             | otherwise = tail xs
 -}
 safetail [] = []
-safetail xs = tail xs
+safetail (_:xs) = xs
 
 (||) :: Bool -> Bool -> Bool
 {-
