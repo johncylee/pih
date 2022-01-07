@@ -1,5 +1,6 @@
 import Data.Char
 import System.IO
+import Control.Monad
 
 strlen :: IO ()
 strlen = do
@@ -147,3 +148,55 @@ showTorus torus = do
   mapM_ putStrLn [map mapCell row | row <- torus ]
   where mapCell x | x == 1 = '*'
                   | otherwise = ' '
+
+-- 1
+putStr' :: String -> IO ()
+putStr' xs = sequence_ [putChar x | x <- xs]
+
+-- 2
+putBoard' :: Board -> IO ()
+putBoard' = rBoard 1
+  where
+    rBoard :: Int -> Board -> IO ()
+    rBoard _ [] = return ()
+    rBoard n (x:xs) = do
+      putRow n x
+      rBoard (n + 1) xs
+
+-- 3 just use putBoard
+
+-- 4
+adder :: IO ()
+adder = do
+  putStr "How many numbers? "
+  x <- getLine
+  xs <- replicateM (read x :: Int) getLine
+  putStrLn ("The total is " ++ show (sum (map (\x -> read x :: Int) xs)))
+
+-- 5 already done in 4
+
+-- 6
+readLineRaw :: IO String
+readLineRaw = do
+  x <- getCh
+  if x == '\n' then do
+    putChar x
+    return []
+  else if x == '\DEL' then do
+    putStr "\b \b"
+    xs <- readLineRaw
+    return (x : xs)
+  else do
+    putChar x
+    xs <- readLineRaw
+    return (x : xs)
+
+readLine :: IO String
+readLine = do
+  xs <- readLineRaw
+  return (foldl handleDEL "" xs)
+
+handleDEL :: String -> Char -> String
+handleDEL [] '\DEL' = []
+handleDEL xs '\DEL' = init xs
+handleDEL xs x = xs ++ [x]
