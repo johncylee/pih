@@ -1,3 +1,4 @@
+{-# LANGUAGE BlockArguments #-}
 import Data.Char
 import Data.List
 import System.IO
@@ -103,35 +104,46 @@ minimax (Node g ts)
     depthO = minimum [d | Node (_, p, d) _ <- ts', p == pO]
     depthX = minimum [d | Node (_, p, d) _ <- ts', p == pX]
 
-bestmove :: Grid -> Player -> Grid
-bestmove g p = head [g' | Node (g', p', d') _ <- ts, p' == best, d' == d - 1]
-  where
-    tree = prune depth (gametree g p)
-    Node (_, best, d) ts = minimax tree
+type MinimaxTree = Tree (Grid, Player, Int)
 
-play :: Player -> Grid -> Player -> IO ()
-play h g p = do
-  putGrid g
-  play' h g p
+bestmove :: MinimaxTree -> MinimaxTree
+bestmove (Node (g, p, d) ts) =
+  head
+    [Node (g', p', d') ts' | Node (g', p', d') ts' <- ts, p' == p, d' == d - 1]
+
+-- human -> tree -> current_player
+play :: Player -> MinimaxTree -> Player -> IO ()
+play h t p = case t of
+               (Node (g, _, _) _) -> do
+                 putGrid g
+                 play' h t p
 
 prompt :: Player -> String
 prompt p = "Player " ++ show p ++ ", enter your move: "
 
-play' :: Player -> Grid -> Player -> IO ()
-play' h g p
-  | wins O g = putStrLn "Player O wins!\n"
-  | wins X g = putStrLn "Player X wins!\n"
-  | full g = putStrLn "It's a draw!\n"
+gridEqual :: Grid -> MinimaxTree -> Bool
+gridEqual x (Node (g,_,_) _) = x == g
+
+findGrid :: Grid -> [MinimaxTree] -> MinimaxTree
+findGrid g ts =
+  case find (gridEqual g) ts of
+    Just t -> t
+
+play' :: Player -> MinimaxTree -> Player -> IO ()
+play' h (Node (g, best, d) ts) p
+  | d == 0 && best == B = putStrLn "It's a draw!\n"
+  | d == 0 = putStrLn ("Player " ++ show best ++ " wins!\n")
   | p == h = do
-    i <- getNat (prompt p)
-    case move g i p of
-      [] -> do
-        putStrLn "ERROR: Invalid move"
-        play' h g p
-      [g'] -> play h g' (next p)
+      i <- getNat (prompt p)
+      case move g i p of
+        [] -> do
+          putStrLn "ERROR: Invalid move"
+          play' h (Node (g, best, d) ts) p
+        [g'] -> play h (findGrid g' ts) (next p)
   | otherwise = do
-    putStrLn ("Player " ++ show p ++ " is thinking...")
-    (play h $! bestmove g p) h
+      putStrLn ("Player " ++ show p ++ " is thinking...")
+      play h t' (next p)
+      where t' = bestmove (Node (g, best, d) ts)
 
 askFirst :: IO Bool
 askFirst = do putStr "Play first? "
@@ -142,10 +154,13 @@ askFirst = do putStr "Play first? "
                 'n' -> return False
                 _ -> askFirst
 
+mt :: MinimaxTree
+mt = minimax (gametree empty O)
+
 main :: IO ()
 main = do hSetBuffering stdout NoBuffering
           playFirst <- askFirst
-          if playFirst then play O empty O
-            else play X empty O
+          if playFirst then play O mt O
+            else play X mt O
 
--- only solved 4.a
+-- only solved 4.c
