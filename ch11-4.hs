@@ -1,4 +1,3 @@
-{-# LANGUAGE BlockArguments #-}
 import Data.Char
 import Data.List
 import System.IO
@@ -88,28 +87,32 @@ prune n (Node x ts) = Node x [prune (n - 1) t | t <- ts]
 depth :: Int
 depth = 9
 
-minimax :: Tree Grid -> Tree (Grid, Player, Int)
-minimax (Node g [])
+minimax :: Player -> Tree Grid -> Tree (Grid, Player, Int)
+minimax _ (Node g [])
   | wins O g = Node (g, O, 0) []
   | wins X g = Node (g, X, 0) []
   | otherwise = Node (g, B, 0) []
-minimax (Node g ts)
-  | turn g == O = Node (g, pO, depthO + 1) ts'
-  | turn g == X = Node (g, pX, depthX + 1) ts'
+minimax h (Node g ts)
+  | turn g == O =
+    if h == O then Node (g, pO, dO + 1) ts'
+    else Node (g, pO, dO + 1) (filter (\(Node (_, _, d) _) -> d == dO) tsO)
+  | turn g == X =
+    if h == X then Node (g, pX, dX + 1) ts'
+    else Node (g, pX, dX + 1) (filter (\(Node (_, _, d) _) -> d == dX) tsX)
   where
-    ts' = map minimax ts
-    ps = [p | Node (_, p, _) _ <- ts']
+    ts' = map (minimax h) ts
+    ps = [p' | Node (_, p', _) _ <- ts']
     pO = minimum ps
     pX = maximum ps
-    depthO = minimum [d | Node (_, p, d) _ <- ts', p == pO]
-    depthX = minimum [d | Node (_, p, d) _ <- ts', p == pX]
+    tsO = filter (\(Node (_, p, _) _) -> p == pO) ts'
+    tsX = filter (\(Node (_, p, _) _) -> p == pX) ts'
+    dO = minimum [d | Node (_, _, d) _ <- tsO]
+    dX = minimum [d | Node (_, _, d) _ <- tsX]
 
 type MinimaxTree = Tree (Grid, Player, Int)
 
 bestmove :: MinimaxTree -> MinimaxTree
-bestmove (Node (g, p, d) ts) =
-  head
-    [Node (g', p', d') ts' | Node (g', p', d') ts' <- ts, p' == p, d' == d - 1]
+bestmove (Node (_, _, _) ts) = head ts
 
 -- human -> tree -> current_player
 play :: Player -> MinimaxTree -> Player -> IO ()
@@ -145,22 +148,16 @@ play' h (Node (g, best, d) ts) p
       play h t' (next p)
       where t' = bestmove (Node (g, best, d) ts)
 
-askFirst :: IO Bool
+askFirst :: IO Player
 askFirst = do putStr "Play first? "
               c <- getChar
               putChar '\n'
               case c of
-                'y' -> return True
-                'n' -> return False
+                'y' -> return O
+                'n' -> return X
                 _ -> askFirst
-
-mt :: MinimaxTree
-mt = minimax (gametree empty O)
 
 main :: IO ()
 main = do hSetBuffering stdout NoBuffering
-          playFirst <- askFirst
-          if playFirst then play O mt O
-            else play X mt O
-
--- only solved 4.c
+          human <- askFirst
+          play human (minimax human (gametree empty O)) O
